@@ -1,6 +1,6 @@
 # Sistema sensor de C02 con MHZ19B y comunicación LoRa con E32TTL100.
 
-## Funcionamineto esperado nodo sensor (Arduino UNO):
+## Funcionamiento esperado nodo sensor (Arduino UNO):
 
 Al inicializar, aparecerán textos en el display que indicarán qué parte del sistema está partiendo, por lo que se verán los textos (en este orden) "HOLA", LORA", "DONE", "HEAT", "DONE"):
 
@@ -8,11 +8,11 @@ Al inicializar, aparecerán textos en el display que indicarán qué parte del s
 
 - En "HEAT" se espera 180 seg (variable tHeat*1000) para que el sensor se caliente, para luego entrar al loop, donde se consulta la concentración de CO2, se expone en pantalla, si es sobre 800 ppm además sonará un buzzer (pasivo, dos sonidos de 300ms, 2100Hz).
 
-- Posteriormente se ingresa a un ciclo de escucha en el que, si llega una solicitud de envío, si corresponde se envía y rompe el ciclo de escucha, delo contrario se espera un segundo, hasta cumplir el minuto o salir de ahi.
+- Posteriormente se ingresa a un ciclo de escucha en el que, si llega una solicitud de envío, si corresponde se envía y rompe el ciclo de escucha, de lo contrario se espera un segundo, hasta cumplir el minuto o salir de ahi.
 
-## Funcionamineto esperado nodo sensora (Node MCU):
+## Funcionamiento esperado nodo comunicación (Node MCU):
 
-Una vez conectado a wifi a AWS y Lora con los nodos sensores, interroga a cada nodo y luego sube la información a AWS.
+Una vez conectado a wifi, AWS y Lora con los nodos sensores, interroga a cada nodo y luego sube la información a AWS.
 
 ## Archivos de configuración:
 
