@@ -1,0 +1,91 @@
+
+
+export default({
+    props: {
+       co2: Object
+    },
+    name: 'app',
+    data() {
+        return {
+            "type": "timeseries",
+            "renderAt": "chart-container",
+            "width": "100%",
+            "height": "500",
+            dataSource: {
+                chart: {},
+                caption: {
+                    text: "Caption"
+                },
+                yaxis: [
+                    {
+                        plot: [
+                            {
+                                value: "CO2 [ppm]"
+                            },
+                            {
+                                value: "Temperature [C]"
+                            }
+                        ],
+                        title: "Title",
+                        referenceline: [
+                            {
+                                label: "Controlled NMHC",
+                                value: "150",
+                                style: {
+                                    marker: {
+                                        fill: "#A4A7D5",
+                                        stroke: "#A4A7D5"
+                                    }
+                                }
+                            },
+                            {
+                                label: "Controlled NO₂",
+                                value: "80",
+                                style: {
+                                marker: {
+                                    fill: "#87DEDB",
+                                    stroke: "#87DEDB"
+                                }
+                                }
+                            }
+                        ]
+                    }
+                ],
+                data: [
+                    [
+                        "3/10/2004 18:00:00",
+                        2.6,
+                        150,
+                        11.9,
+                        113,
+                        13.6
+                    ],
+                    [
+                        "3/10/2004 19:00:00",
+                        2,
+                        112,
+                        9.4,
+                        92,
+                        13.3
+                    ],
+                    [
+                        "3/10/2004 20:00:00",
+                        2.2,
+                        88,
+                        9,
+                        114,
+                        11.9
+                    ],
+                    [
+                        "3/10/2004 21:00:00",
+                        2.2,
+                        80,
+                        9.2,
+                        122,
+                        11
+                    ]
+                ]
+            }
+        }
+    }
+})
