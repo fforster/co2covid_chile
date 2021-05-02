@@ -1,13 +1,13 @@
 <template>
     <div id="app">
+    {{ co2.loading_status }}
+    {{ co2.last_update }}
         <fusioncharts
         :type="type"
         :width="width"
         :height="height"
         :dataSource="dataSource"
     ></fusioncharts>
-    {{ co2.loading_status }}
-    {{ co2.last_update }}
     </div>
 </template>
 
