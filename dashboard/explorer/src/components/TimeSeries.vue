@@ -1,5 +1,9 @@
 <template>
     <div id="app">
+
+    <div v-show="co2.loading_status === 'Cargando datos...'" class="spinner-border" role="status">
+        <span class="sr-only">Loading...</span>
+    </div>
     {{ co2.loading_status }}
     {{ co2.last_update }}
         <fusioncharts

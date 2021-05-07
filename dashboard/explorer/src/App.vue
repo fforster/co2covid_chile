@@ -1,6 +1,17 @@
 <template>
   <div id="app" class="container">
-    <SideBar :co2="co2" :device_ids="device_ids" v-on:update="update" />
+    <SideBar 
+      :co2="co2" 
+      :device_id_prefixes="device_id_prefixes" 
+      :device_id_suffixes="device_id_suffixes"
+      :device_id_longnames="device_id_longnames"
+      :device_id_codes="device_id_codes"
+      :device_id_maxsensor="device_id_maxsensor"
+      v-on:update="update"
+      v-on:reset_mintime="reset_mintime"
+      v-on:reset_maxtime="reset_maxtime" 
+      v-on:check_times="check_times"
+    />
     <TimeSeries :co2="co2" :dataSource="dataSource" />
   </div>
 </template>
@@ -11,7 +22,8 @@ import TimeSeries from "./components/TimeSeries.vue";
 import FusionCharts from "fusioncharts";
 
 var jsonify = (res) => res.json();
-const co2api = "https://1jakqf24xb.execute-api.us-east-2.amazonaws.com/dev/co2";
+const co2api = "https://8du9q3bcpj.execute-api.us-east-2.amazonaws.com/dev/co2";
+//const co2api = "https://1jakqf24xb.execute-api.us-east-2.amazonaws.com/dev/co2";
 var schema = [
   {
     name: "Time",
@@ -26,6 +38,10 @@ var schema = [
     name: "Temperature [C]",
     type: "number",
   },
+  {
+    name: "Humidity [%]",
+    type: "number",
+  }
 ];
 console.log(schema);
 
@@ -40,13 +56,20 @@ export default {
       co2: {
         data: [],
         datafc: [],
-        device_id: 1,
-        min_isotime: "2021-03-29T00:00:00",
-        max_isotime: "2021-03-29T20:00:00",
+        device_id_prefix: "Oficina", // only for the first image
+        device_id_suffix: 0, // note that suffix starts with zero, but sensors start with one
+        min_isotime: "", //2021-05-03T02:30:00",
+        max_isotime: "", //2021-05-03T03:00:00",
         last_update: "",
-        loading_status: "Cargando datos..."
+        loading_status: "Cargando datos...",
+        query: 1,
       },
-      device_ids: [0, 1, 2],
+      device_id_longnames: [],
+      device_id_comunas: {'Oficina': 'Providencia'},  // first values, just to show when first entering the page
+      device_id_codes: {'Oficina': 'ffb'}, // first values, just to show when first entering the page
+      device_id_maxsensor: {},
+      device_id_prefixes: [],
+      device_id_suffixes: [],
       dataSource: {
         data: null,
         chart: {
@@ -97,6 +120,22 @@ export default {
               },
             },
           },
+          {
+            plot: {
+              value: "Humidity [%]",
+              connectnulldata: true,
+              type: "line",
+            },
+            title: "Humedad",
+            format: {
+              suffix: " %",
+            },
+            style: {
+              title: {
+                "font-size": "20px",
+              },
+            },
+          }
         ],
       },
     };
@@ -111,6 +150,7 @@ export default {
           res.data[i].isotime.substring(0, 19), //remove decimal part in seconds
           parseFloat(res.data[i].co2),
           parseFloat(res.data[i].temperature),
+          parseFloat(res.data[i].humidity),
         ]);
       }
       return res.next_url
@@ -124,33 +164,87 @@ export default {
           if (url != undefined) {
             return this.getAPIdata(url);
           } else {
-            this.co2.loading_status = "Última actualización:"
+            this.co2.loading_status = "Última actualización (UT):"
           }
         });
     },
     parseAPIdata() {
-      var url = `${co2api}?device_id=${this.co2.device_id}&min_isotime=${this.co2.min_isotime}&max_isotime=${this.co2.max_isotime}`;
+      var sprintf = require('sprintf-js').sprintf;
+      var url;
+      console.log(this.co2.min_isotime);
+      console.log(this.co2.max_isotime);
+      var device_id_suffix_formatted = sprintf('%02d', this.co2.device_id_suffix + 1);
+      console.log(device_id_suffix_formatted);
+      if ((this.co2.min_isotime != "") & (this.co2.max_isotime != "")) {
+        url = `${co2api}?device_id=${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted}&min_isotime=${this.co2.min_isotime}&max_isotime=${this.co2.max_isotime}`;
+      } else if ((this.co2.min_isotime === "") & (this.co2.max_isotime === "")) {
+        url = `${co2api}?device_id=${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted}`;
+      }
+        
+      console.log(url)
       this.co2.datafc = [];
-      this.co2.loading_status = "Cargando datos..."
+      this.co2.loading_status = "Cargando datos...";
       this.getAPIdata(url).then(() => {
         console.log("Parsing API response data...");
 
-        this.dataSource.caption.text = `Sensor: ${this.co2.device_id}`;
+        this.dataSource.caption.text = `Sensor: ${this.co2.device_id_prefix}, ${this.device_id_comunas[this.co2.device_id_prefix]} (${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted})`;
         const fusionTable = new FusionCharts.DataStore().createDataTable(
           this.co2.datafc,
           schema
         );
         this.dataSource.data = fusionTable;
-        console.log("dataSource");
-        console.log(this.dataSource);
       });
     },
     update() {
       this.parseAPIdata();
     },
+    reset_mintime() {
+      this.co2.min_isotime = "";
+      if (this.co2.max_isotime != "") {
+        this.co2.query = 0;
+      } else {
+        this.co2.query = 1;
+      }
+    },
+    reset_maxtime() {
+      this.co2.max_isotime = "";
+      if (this.co2.min_isotime != "") {
+        this.co2.query = 0;
+      } else {
+        this.co2.query = 1;
+      }
+    },
+    check_times() {
+      console.log(this.co2.min_isotime);
+      if (((this.co2.min_isotime != "") & (this.co2.max_isotime != "")) | ((this.co2.min_isotime === "") & (this.co2.max_isotime === ""))) {
+        // add here maximum time difference check
+        this.co2.query = 1;
+      } else {
+        this.co2.query = 0;
+      }
+    },
+    save_location(results) {
+      var i;
+        for (i = 1; i < results.data.length; i++) { 
+          this.device_id_longnames.push(results.data[i][0]);
+          this.device_id_comunas[results.data[i][0]] = results.data[i][1];
+          this.device_id_codes[results.data[i][0]] = results.data[i][2];
+          this.device_id_maxsensor[results.data[i][0]] = parseInt(results.data[i][3]);
+        }
+    },
+    parse_locations(callBack) {
+      var url = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSwU19n2rNiiZT_j4eX-IDKbj0jsFZ2NDly8PfWuUszTsH8unKtP4gqS9l-tys68578S0JIH3qBcpuu/pub?output=csv";
+      this.$papa.parse(url, {
+        download: true, complete: function(results) { 
+          callBack(results);
+        }
+      });
+    }
   },
   mounted: function () {
+    this.parse_locations(this.save_location);
     this.parseAPIdata();
+
   },
 };
 </script>
