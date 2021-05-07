@@ -147,15 +147,15 @@ void setup() {
 //-----------------------------------------------------------------
 void loop() {
   for (int i = 0; i == numeroSensores; i++) {
-    String nodoIdAux = idRoot;
+    String nodoIdAux = idRoot; 
     if(i<10){
-      nodoIdAux = nodoIdAux +"0"+ String(i);
-      }
-    else{
-      nodoIdAux = nodoIdAux + String(i);
-      }
-      consultarA(nodoIdAux);
+      nodoIdAux = nodoIdAux + "-" + "0" + String(i); 
     }
+    else{
+      nodoIdAux = nodoIdAux + "-" + String(i);
+    }
+    consultarA(nodoIdAux);
+  }
   delay(pauseBetweenLoops);
 }
 
