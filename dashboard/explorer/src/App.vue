@@ -12,11 +12,20 @@
       v-on:reset_maxtime="reset_maxtime" 
       v-on:check_times="check_times"
     />
-    <TimeSeries :co2="co2" :dataSource="dataSource" />
+    <TimeSeries 
+      :co2="co2" 
+      :dataSource="dataSource"
+      :device_id_longnames="device_id_longnames"
+      :device_id_codes="device_id_codes"
+      :device_id_maxsensor="device_id_maxsensor"
+      :device_id_co2stats="device_id_co2stats"
+      :device_id_tempstats="device_id_tempstats"
+    />
   </div>
 </template>
 
 <script>
+import Vue from 'vue';
 import SideBar from "./components/SideBar.vue";
 import TimeSeries from "./components/TimeSeries.vue";
 import FusionCharts from "fusioncharts";
@@ -49,24 +58,25 @@ export default {
   name: "App",
   components: {
     SideBar,
-    TimeSeries,
+    TimeSeries
   },
   data() {
     return {
       co2: {
         data: [],
         datafc: [],
-        device_id_prefix: "Oficina", // only for the first image
-        device_id_suffix: 0, // note that suffix starts with zero, but sensors start with one
+        device_id_prefix: "Oficina Francisco", // only for the first image
+        device_id_suffix: 1, // note that suffix starts with zero, but sensors start with one
         min_isotime: "", //2021-05-03T02:30:00",
         max_isotime: "", //2021-05-03T03:00:00",
         last_update: "",
         loading_status: "Cargando datos...",
-        query: 1,
-      },
+        query: 1      },
       device_id_longnames: [],
-      device_id_comunas: {'Oficina': 'Providencia'},  // first values, just to show when first entering the page
-      device_id_codes: {'Oficina': 'ffb'}, // first values, just to show when first entering the page
+      device_id_comunas: {'Oficina Francisco': 'Providencia'},  // first values, just to show when first entering the page
+      device_id_codes: {'Oficina Francisco': 'ffb'}, // first values, just to show when first entering the page
+      device_id_co2stats: {},
+      device_id_tempstats: {},
       device_id_maxsensor: {},
       device_id_prefixes: [],
       device_id_suffixes: [],
@@ -170,30 +180,35 @@ export default {
     },
     parseAPIdata() {
       var sprintf = require('sprintf-js').sprintf;
-      var url;
-      console.log(this.co2.min_isotime);
-      console.log(this.co2.max_isotime);
-      var device_id_suffix_formatted = sprintf('%02d', this.co2.device_id_suffix + 1);
-      console.log(device_id_suffix_formatted);
-      if ((this.co2.min_isotime != "") & (this.co2.max_isotime != "")) {
-        url = `${co2api}?device_id=${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted}&min_isotime=${this.co2.min_isotime}&max_isotime=${this.co2.max_isotime}`;
-      } else if ((this.co2.min_isotime === "") & (this.co2.max_isotime === "")) {
-        url = `${co2api}?device_id=${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted}`;
-      }
-        
-      console.log(url)
-      this.co2.datafc = [];
-      this.co2.loading_status = "Cargando datos...";
-      this.getAPIdata(url).then(() => {
-        console.log("Parsing API response data...");
+      var url, i, device_id_suffix_formatted;
+      if (this.co2.device_id_suffix != "Todos") {
+        device_id_suffix_formatted = sprintf('%02d', this.co2.device_id_suffix);
+        if ((this.co2.min_isotime != "") & (this.co2.max_isotime != "")) {
+          url = `${co2api}?device_id=${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted}&min_isotime=${this.co2.min_isotime}&max_isotime=${this.co2.max_isotime}`;
+        } else if ((this.co2.min_isotime === "") & (this.co2.max_isotime === "")) {
+          url = `${co2api}?device_id=${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted}`;
+        }
+        console.log(url)
+        this.co2.datafc = [];
+        this.co2.loading_status = "Cargando datos...";
+        this.getAPIdata(url).then(() => {
+          console.log("Parsing API response data...");
 
-        this.dataSource.caption.text = `Sensor: ${this.co2.device_id_prefix}, ${this.device_id_comunas[this.co2.device_id_prefix]} (${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted})`;
-        const fusionTable = new FusionCharts.DataStore().createDataTable(
-          this.co2.datafc,
-          schema
-        );
-        this.dataSource.data = fusionTable;
-      });
+          this.dataSource.caption.text = `Sensor: ${this.co2.device_id_prefix}, ${this.device_id_comunas[this.co2.device_id_prefix]} (${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted})`;
+          const fusionTable = new FusionCharts.DataStore().createDataTable(
+            this.co2.datafc,
+            schema
+          );
+          this.dataSource.data = fusionTable;
+        });
+      } else {
+        for (i=0; i < this.device_id_maxsensor[this.co2.device_id_prefix]; i++) {
+          device_id_suffix_formatted = sprintf('%02d', i + 1);
+          url = `${co2api}?device_id=${this.device_id_codes[this.co2.device_id_prefix]}-${device_id_suffix_formatted}`;
+          console.log(url);
+          this.get_stats(url, i);
+        }
+      }
     },
     update() {
       this.parseAPIdata();
@@ -224,12 +239,18 @@ export default {
       }
     },
     save_location(results) {
-      var i;
+      var i, j;
         for (i = 1; i < results.data.length; i++) { 
           this.device_id_longnames.push(results.data[i][0]);
           this.device_id_comunas[results.data[i][0]] = results.data[i][1];
           this.device_id_codes[results.data[i][0]] = results.data[i][2];
           this.device_id_maxsensor[results.data[i][0]] = parseInt(results.data[i][3]);
+          this.device_id_co2stats[results.data[i][0]] = []
+          this.device_id_tempstats[results.data[i][0]] = []
+          for (j = 0; j < this.device_id_maxsensor[results.data[i][0]]; j++) {
+            this.device_id_co2stats[results.data[i][0]].push("");
+            this.device_id_tempstats[results.data[i][0]].push("");
+          }
         }
     },
     parse_locations(callBack) {
@@ -239,6 +260,26 @@ export default {
           callBack(results);
         }
       });
+    },
+    parse_stats(res) {
+      
+      var id = res.data[0]["device_id"];
+      id = parseInt(id.substring(4, 6));
+      var co2stats = [];
+      var tempstats = [];
+      var i;
+      for (i = 0; i < res.data.length; i++) {
+        co2stats.push(parseFloat(res.data[i].co2));
+        tempstats.push(parseFloat(res.data[i].temperature));
+      }
+      Vue.set(this.device_id_co2stats[this.co2.device_id_prefix], id - 1, Math.max(...co2stats));
+      Vue.set(this.device_id_tempstats[this.co2.device_id_prefix], id - 1, Math.min(...tempstats));
+      this.co2.last_update = res.now;
+      this.co2.loading_status = "Última actualización (UT)";
+    },
+    get_stats(url) {
+      this.co2.loading_status = "Cargando datos...";
+      fetch(url).then(jsonify).then(this.parse_stats);
     }
   },
   mounted: function () {

@@ -2,7 +2,7 @@
   <div class="text-left">
     <b-button v-b-toggle.sidebar-1>Nueva búsqueda</b-button>
     <b-sidebar id="sidebar-1" title="Parámetros de entrada" shadow>
-        <h4> Colegio </h4>
+        <h4> Ubicación </h4>
         <div>
           <b-form-select v-model="co2.device_id_prefix" :options="device_id_longnames"></b-form-select>
         </div>
@@ -10,11 +10,11 @@
         <h5> Número de sensor </h5>
         <div>
           <b-form-select v-model="co2.device_id_suffix">                   
-            <option v-for="(selectOption, indexOpt) in Array(device_id_maxsensor[co2.device_id_prefix]).keys()" 
+            <option v-for="(selectOption, indexOpt) in Array('Todos').concat(range(device_id_maxsensor[co2.device_id_prefix] + 1))"
             :key="indexOpt"
             :value="selectOption"
             >
-              {{ selectOption + 1 }} 
+              {{ selectOption }} 
             </option>
           </b-form-select>
 
@@ -46,20 +46,31 @@
             </div>
           </div>
         <br>
-        <button class="btn btn-primary" type="submit" v-on:click="$emit('update')" v-bind:disabled="co2.query === 0" > Actualizar </button>
+        <button class="btn btn-primary" type="submit" v-on:click="$emit('update')" v-bind:disabled="((co2.query === 0) || (co2.loading_status === 'Cargando datos...'))" >
+          Actualizar 
+        </button>
+        <span style="padding-left:20px">
+          <button class="btn btn-primary" type="submit" v-on:click="co2.loading_status=''" v-bind:disabled="(co2.loading_status != 'Cargando datos...')" >
+            Detener 
+          </button>
+        </span>
         <p> </p>
         <div v-show="co2.loading_status === 'Cargando datos...'" class="spinner-border" role="status">
           <span class="sr-only">Loading...</span>
         </div>
         {{ co2.loading_status }}
         {{ co2.last_update }}
-        
+        <br>
+        <br>
+        <hr>
+        <a href="http://co2uchile.com/"> <span style="padding-left:20px"> Más información </span> </a>
     </b-sidebar>
   </div>
 </template>
 
 
 <script>
+import _ from 'lodash';
 export default({
   props: {
     co2: Object,
@@ -68,6 +79,11 @@ export default({
     device_id_longnames: Array,
     device_id_codes: Object,
     device_id_maxsensor: Object
+  },
+  methods: {
+    range (value) {
+      return _.range(1,value)
+    }
   }
 })
 </script>
