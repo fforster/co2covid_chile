@@ -183,23 +183,20 @@ void consultarA(String nodo){
   delay(5000);
   if(e32ttl100.available()  > 1 ){ 
     ResponseContainer rc = e32ttl100.receiveMessage();
-    Serial.println(nodo + ": " + rc.data);
   
     //Conexión para envío a AWS:
     pubSubCheckConnect();
   
     //Envío a  AWS:
     if (millis() - lastPublish > 10000) {
-      int device_id = 1;
       String msg = rc.data;
-      Serial.println(msg);
-      //if ((msg.substring(msg.length()-1, msg.length())).equals("}")) {
-      //    String topic = String("device/") + device_id + String("/data");
-      //    Serial.println(topic);
-      //    pubSubClient.publish(topic.c_str(), rc.data.c_str());
-      //    Serial.print("Published: "); Serial.println(rc.data.c_str());
-      //    lastPublish = millis();
-      // }
+      if ((msg.substring(msg.length()-1, msg.length())).equals("}")) {
+          String topic = String("device/") + nodo + String("/data");
+          Serial.println(topic + ": " + msg);
+          pubSubClient.publish(topic.c_str(), msg.c_str());
+          Serial.println("Published.");
+          lastPublish = millis();
+      }
     }
   }//if e32 dispoinble
   else{;}

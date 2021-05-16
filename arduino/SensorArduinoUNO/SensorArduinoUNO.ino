@@ -142,24 +142,23 @@ void loop() {
     tone(buzzerPin, 2100, 300); delay(100);
     tone(buzzerPin, 2100, 300); delay(100);
   }
-  for (int i = 0; i == 60; i++) {
+  for (int i = 0; i < 60; i++) {
+    Serial.println(i);
     mySerial.listen();
-    if (e32ttl100.available() > 1){
+    if (e32ttl100.available() > 1) {
       ResponseContainer rc = e32ttl100.receiveMessage();
-      if(StringId.equals(rc.data)){
+      Serial.println(rc.data);
+      if (StringId.equals(rc.data)) {
         String msg = String("{\"co2\": ") + ppm
             + String(", \"temperature\": ") + temp
             + String(", \"humidity\": ") + humidity + String("}");
         e32ttl100.sendMessage(msg.c_str());
         Serial.println(msg);
         break;
-       }
-    else{
-        //display.showNumber(ppm); 
-        delay(1000);
       }
+    }
+    delay(1000);
   }
- }
 }
 
 // Calentar MHZ19
