@@ -1,7 +1,6 @@
 /***************************************************************************
-CO2 SENSOR AND TRANSMISSIÓN SYSTEM
-Pablo Martín, Francisco Förster
-NODEMCU V4
+Gateway LoRa
+Pablo Martín y Francisco Förster
 ***************************************************************************/
 //Librerías
 //-----------------------------------------------------------------
@@ -18,10 +17,29 @@ extern "C" {
 #include "NodeMCU_config.h"
 #include "aws_credentials.h"
 
-//LoRa E32TTL100
-//-----------------------------------------------------------------
+// pines
+// ------------------------------
+
+#define E32M0 D7 // M0
+#define E32M1 D6 // M1
+#define E32RX D3 // Arduino TX --> E32 RX
+#define E32TX D2 // Arduino RX <-- E32 TX
+#define E32AUX D5 // AUX
+
+#define CLK D0   // define CLK pin (any digital pin)
+#define DIO D1   // define DIO pin (any digital pin)
+
+
+// LoRa E32TTL100
+// -----------------------------------------------------------------
 //Creación de instancia y comunicación serial de Radio LoRa para ESP8266
-LoRa_E32 e32ttl100(D2, D3, D5, D7, D6);
+LoRa_E32 e32ttl100(E32TX, E32RX, E32AUX, E32M0, E32M1);
+
+
+// Display de 7 segmentos:
+// -----------------------------------------------------------------
+TM1637TinyDisplay display(CLK, DIO);
+
 
 // WIFI
 //-----------------------------------------------------------------
@@ -29,30 +47,20 @@ WiFiClientSecure wiFiClient;
 void msgReceived(char* topic, byte* payload, unsigned int len);
 PubSubClient pubSubClient(awsEndpoint, 8883, msgReceived, wiFiClient); 
 
-//Display de 7 segmentos:
-//-----------------------------------------------------------------
-const byte CLK = 12;   // define CLK pin (any digital pin)
-const byte DIO = 13;   // define DIO pin (any digital pin)
-TM1637TinyDisplay display(CLK, DIO);
-
-
-//Buzzer
-//-----------------------------------------------------------------
-byte buzzerPin = 7;
 
 //Valores fijos en la rutina
 //-----------------------------------------------------------------
 int pauseBetweenLoops = 15; //en seg
-int ppmAlarma = 800; //Nivel de alarma por nivel de CO2
+
 
 //Variables auxiliares
 //-----------------------------------------------------------------
 unsigned long lastPublish;
 int msgCount;
 
-//-----------------------------------------------------------------
-//Setup ***********************************************************
-//-----------------------------------------------------------------
+
+// Setup 
+// ***********************************************************
 
 void setup() {
   
@@ -139,14 +147,19 @@ void setup() {
   delay(500);
   display.showString("INIT");
   delay(1000);
-  
+
+  Serial.println(idRoot);
+  Serial.println(numeroSensores);
+
 }//setup
 
 //-----------------------------------------------------------------
 //Loop  ***********************************************************
 //-----------------------------------------------------------------
 void loop() {
-  for (int i = 0; i == numeroSensores; i++) {
+  
+  for (int i = 1; i <= numeroSensores; i++) {
+    Serial.println(i);
     String nodoIdAux = idRoot; 
     if(i<10){
       nodoIdAux = nodoIdAux + "-" + "0" + String(i); 
@@ -154,6 +167,7 @@ void loop() {
     else{
       nodoIdAux = nodoIdAux + "-" + String(i);
     }
+    Serial.println(nodoIdAux);
     consultarA(nodoIdAux);
   }
   delay(pauseBetweenLoops);
@@ -163,7 +177,7 @@ void loop() {
 //Funciones *******************************************************
 //-----------------------------------------------------------------
 void consultarA(String nodo){
- Serial.println("Enviando mensaje a: " + nodo);
+  Serial.println("Enviando mensaje a: " + nodo);
   ResponseStatus rs = e32ttl100.sendMessage(nodo);
   //If something available
   delay(5000);
@@ -178,13 +192,14 @@ void consultarA(String nodo){
     if (millis() - lastPublish > 10000) {
       int device_id = 1;
       String msg = rc.data;
-      if ((msg.substring(msg.length()-1, msg.length())).equals("}")) {
-          String topic = String("device/") + device_id + String("/data");
-          Serial.println(topic);
-          pubSubClient.publish(topic.c_str(), rc.data.c_str());
-          Serial.print("Published: "); Serial.println(rc.data.c_str());
-          lastPublish = millis();
-       }
+      Serial.println(msg);
+      //if ((msg.substring(msg.length()-1, msg.length())).equals("}")) {
+      //    String topic = String("device/") + device_id + String("/data");
+      //    Serial.println(topic);
+      //    pubSubClient.publish(topic.c_str(), rc.data.c_str());
+      //    Serial.print("Published: "); Serial.println(rc.data.c_str());
+      //    lastPublish = millis();
+      // }
     }
   }//if e32 dispoinble
   else{;}

@@ -1,52 +1,67 @@
- /***************************************************************************
-CO2 SENSOR AND TRANSMISSIÓN SYSTEM
-Pablo Martín
+/***************************************************************************
+Sensor CO2 con radio LoRa
+Pablo Martín y Francisco Forster
 ***************************************************************************/
 //Librerías
 #include "Arduino.h"
 #include "LoRa_E32.h"
 #include <Wire.h>
 #include <SoftwareSerial.h>
-#include <TM1637Display.h>
 #include <MHZ19_uart.h>
 #include <TM1637TinyDisplay.h>
 #include "Sensor_config.h"
 
+// conexiones
+// ------------------------------------------------
 
-//LoRa E32TTL100
-//-----------------------------------------------------------------
+#define E32TX 2 // Arduino RX <-- e32 TX
+#define E32RX 3 // Arduino TX --> e32 RX
+#define E32AUX 5 // E32 aux
+#define E32M0 7 // E32 m0
+#define E32M1 6 // E32 m1
+
+#define MHZ19TX 8 // Arduino RX <-- MHZ19 TX
+#define MHZ19RX 9 // Arduino TX --> MHZ19 RX
+
+#define CLK 12   // define CLK pin (any digital pin)
+#define DIO 11   // define DIO pin (any digital pin)
+
+#define buzzerPin 7 // buzzer pin
+
+
+// LoRa E32TTL100
+// -----------------------------------------------------------------
 #include <SoftwareSerial.h>
-SoftwareSerial mySerial(2, 3); // Arduino RX <-- e32 TX, Arduino TX --> e32 RX (no cambiar nombre mySerial
-LoRa_E32 e32ttl100(&mySerial, 5, 7, 6);
+SoftwareSerial mySerial(E32TX, E32RX); // (no cambiar nombre mySerial
+LoRa_E32 e32ttl100(&mySerial, E32AUX, E32M0, E32M1);
 ResponseStatus rsb;
 
-//Sensor NDIR
-//-----------------------------------------------------------------
-SoftwareSerial co2Serial(8, 9); //D8: TX del sensor , D9: RX del sensor (confirmar)
+
+// Sensor NDIR
+// -----------------------------------------------------------------
+SoftwareSerial co2Serial(MHZ19TX, MHZ19RX); //D8: TX del sensor , D9: RX del sensor (confirmar)
 MHZ19_uart mhz19;
 //Tiempos de muestreo y calentamiento NDIR:
 int samplingTime_seg = 15; //en seg
-int tHeat = 180; //en seg
+int tHeat = 10; //180; //en seg
 //Variables auxiliares NDIR:
 unsigned long ppm = 0;
 byte temp = 0;
 
-//Buzzer (pasivo)
+
+// Buzzer (pasivo)
 //-----------------------------------------------------------------
 byte auxAlerta = 0;  // Si este valor es 1 por un tiempo x, sonará la alarma.
-byte buzzerPin = 7;  // Pin para activar el buzzer
 int ppmAlerta = 800; // Umbral de alerta
 
-//Display de 7 segmentos
-//-----------------------------------------------------------------
-const byte CLK = 12;   // define CLK pin (any digital pin)
-const byte DIO = 11;   // define DIO pin (any digital pin)
+
+// Display de 7 segmentos
+// -----------------------------------------------------------------
 TM1637TinyDisplay display(CLK, DIO);
   
-//-----------------------------------------------------------------
-//Setup ***********************************************************
-//-----------------------------------------------------------------
 
+// Setup 
+// ******************************************************************
 void setup() {
   //Inicialización de comunicaciones seriales:
   Serial.begin(9600);  //Para debuggear
@@ -71,35 +86,37 @@ void setup() {
   Serial.println("*******************************************");
 
   
-// ******************************************************************************
-//  ESTE CÓDIGO SOLO SE CARGA PARA CONFIGURAR (LA PRIMERA VEZ),
-//  Luego se re compila el programa con esto comentado.
-//  ---------------------------------
-  e32ttl100.setMode(MODE_3_SLEEP);
-  delay(10);
-  configuration.ADDL = 0x07;
-  configuration.ADDH = 0x07;
-  configuration.CHAN = 0x17;
-  configuration.OPTION.fec = FEC_1_ON;
-  configuration.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
-  configuration.OPTION.ioDriveMode = IO_D_MODE_PUSH_PULLS_PULL_UPS;
-  configuration.OPTION.transmissionPower = POWER_20;
-  configuration.OPTION.wirelessWakeupTime = WAKE_UP_250;
-  configuration.SPED.airDataRate = AIR_DATA_RATE_010_24;
-  configuration.SPED.uartBaudRate = UART_BPS_9600;
-  configuration.SPED.uartParity = MODE_00_8N1;
-  //Set configuration changed and set to not hold the configuration
-  ResponseStatus rs = e32ttl100.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
-  Serial.println(rs.getResponseDescription());
-  Serial.println(rs.code);
   // ******************************************************************************
-
-  c.close(); //Cierra el struct container.  
-  Serial.println("ELIGIENDO MODO NORMAL DE TRANSMISIÓN...");
-  e32ttl100.setMode(MODE_0_NORMAL);
-  delay(1000);
-  display.showString("DONE");
-  delay(1000);
+  //  ESTE CÓDIGO SOLO SE CARGA PARA CONFIGURAR (LA PRIMERA VEZ),
+  //  Luego se re compila el programa con esto comentado.
+  //  ---------------------------------
+  if (e32config) {
+    e32ttl100.setMode(MODE_3_SLEEP);
+    delay(10);
+    configuration.ADDL = 0x07;
+    configuration.ADDH = 0x07;
+    configuration.CHAN = 0x17;
+    configuration.OPTION.fec = FEC_1_ON;
+    configuration.OPTION.fixedTransmission = FT_TRANSPARENT_TRANSMISSION;
+    configuration.OPTION.ioDriveMode = IO_D_MODE_PUSH_PULLS_PULL_UPS;
+    configuration.OPTION.transmissionPower = POWER_20;
+    configuration.OPTION.wirelessWakeupTime = WAKE_UP_250;
+    configuration.SPED.airDataRate = AIR_DATA_RATE_010_24;
+    configuration.SPED.uartBaudRate = UART_BPS_9600;
+    configuration.SPED.uartParity = MODE_00_8N1;
+    //Set configuration changed and set to not hold the configuration
+    ResponseStatus rs = e32ttl100.setConfiguration(configuration, WRITE_CFG_PWR_DWN_SAVE);
+    Serial.println(rs.getResponseDescription());
+    Serial.println(rs.code);
+    // ******************************************************************************
+    c.close(); //Cierra el struct container.  
+  
+    Serial.println("ELIGIENDO MODO NORMAL DE TRANSMISIÓN...");
+    e32ttl100.setMode(MODE_0_NORMAL);
+    delay(1000);
+    display.showString("DONE");
+    delay(1000);
+  }
   
   //Función que espera 180 segundos para la preparación del NDIR:
   display.showString("HEAT");
@@ -107,17 +124,18 @@ void setup() {
   Serial.println("CONFIGURACIÓN LISTA ARDUINO UNO...");
   display.showString("DONE"); 
   delay(1000);
-}//Setup
+}
 
-//-----------------------------------------------------------------
-//Loop  ***********************************************************
-//-----------------------------------------------------------------
+
+// Loop  
+// ***********************************************************
 void loop() {
   //FOR I = 1,...,60
   //IF NEWS... DISPLAY(ALARM?), TRANSMIT AND BREAK
   //ELSE DISPLAY
   co2Serial.listen();
   ppm = readCO2UART();
+  float humidity = 0;
   display.showNumber(int(ppm)); 
   if(ppm >= ppmAlerta){
     Serial.print("Alerta");
@@ -129,12 +147,11 @@ void loop() {
     if (e32ttl100.available() > 1){
       ResponseContainer rc = e32ttl100.receiveMessage();
       if(StringId.equals(rc.data)){
-        //String msg = String("{\"co2\": ") + ppm
-        //    + String(", \"temperature\": ") + temp
-        //    + String(", \"humidity\": ") + humidity + String("}");
-        //e32ttl100.sendMessage(msg.c_str());
-        e32ttl100.sendMessage(StringId + "," + String(ppm) + "," + String(temp));
-        Serial.println(StringId + "," + String(ppm) + "," + String(temp));
+        String msg = String("{\"co2\": ") + ppm
+            + String(", \"temperature\": ") + temp
+            + String(", \"humidity\": ") + humidity + String("}");
+        e32ttl100.sendMessage(msg.c_str());
+        Serial.println(msg);
         break;
        }
     else{
@@ -143,18 +160,19 @@ void loop() {
       }
   }
  }
-} // loop
+}
 
+// Calentar MHZ19
 void calentando(){
   for(int i=0; i<= tHeat ;i++){
       display.clear();
       int j = tHeat-i;
       display.showNumber(j); 
       delay(1000);
-  }//for
-}//calentando()
+  }
+}
 
-//Obtención de datos NDIR:
+// Obtener datos NDIR:
 int readCO2UART(){
   byte cmd[9] = {0xFF,0x01,0x86,0x00,0x00,0x00,0x00,0x00,0x79};
   byte response[9]; // for answer
@@ -184,14 +202,14 @@ int readCO2UART(){
 //  Serial.println("");
 
   // checksum
-  byte check = getCheckSum(response);
-  if (response[8] != check) {
-    Serial.println("Checksum not OK!");
-    Serial.print("Received: ");
-    Serial.println(response[8]);
-    Serial.print("Should be: ");
-    Serial.println(check);
-  }
+  //byte check = getCheckSum(response);
+  //if (response[8] != check) {
+  //  Serial.println("Checksum not OK!");
+  //  Serial.print("Received: ");
+  //  Serial.println(response[8]);
+  //  Serial.print("Should be: ");
+  //  Serial.println(check);
+  //}
  
   // ppm
   int ppm_uart = 256 * (int)response[2] + response[3];
@@ -214,6 +232,7 @@ int readCO2UART(){
   return ppm_uart;
 }
 
+// CheckSum
 byte getCheckSum(char *packet) {
   byte i;
   unsigned char checksum = 0;
@@ -225,6 +244,7 @@ byte getCheckSum(char *packet) {
   return checksum;
 }
 
+// Imprimir parámetros E32
 void printParameters(struct Configuration configuration) {
   Serial.println("----------------------------------------");
 
