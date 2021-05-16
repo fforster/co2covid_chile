@@ -85,6 +85,18 @@ export default {
         chart: {
           multicanvas: true,
         },
+        navigator: {
+          enabled: true,
+          label: 'Navegar'
+        },
+        extensions: {
+          customRangeSelector: {
+            enabled: "0"
+          }
+        },
+        legend: {
+          enabled: "0"
+        },
         caption: {
           text: null,
         },
@@ -110,7 +122,7 @@ export default {
             referenceLine: [
               {
                 label: "Ventilar",
-                value: "500",
+                value: "800",
               },
             ],
           },
@@ -262,7 +274,6 @@ export default {
       });
     },
     parse_stats(res) {
-      
       var id = res.data[0]["device_id"];
       id = parseInt(id.substring(4, 6));
       var co2stats = [];
