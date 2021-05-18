@@ -160,6 +160,7 @@ void loop() {
   
   for (int i = 1; i <= numeroSensores; i++) {
     Serial.println(i);
+    display.showNumber(i);
     String nodoIdAux = idRoot; 
     if(i<10){
       nodoIdAux = nodoIdAux + "-" + "0" + String(i); 
@@ -193,8 +194,10 @@ void consultarA(String nodo){
       if ((msg.substring(msg.length()-1, msg.length())).equals("}")) {
           String topic = String("device/") + nodo + String("/data");
           Serial.println(topic + ": " + msg);
+          display.showString(nodo.c_str());
           pubSubClient.publish(topic.c_str(), msg.c_str());
           Serial.println("Published.");
+          display.showString("Published");
           lastPublish = millis();
       }
     }
