@@ -186,19 +186,25 @@ void consultarA(String nodo){
     ResponseContainer rc = e32ttl100.receiveMessage();
   
     //Conexión para envío a AWS:
-    pubSubCheckConnect();
+    if (pubSubCheckConnect()) {
   
-    //Envío a  AWS:
-    if (millis() - lastPublish > 10000) {
-      String msg = rc.data;
-      if ((msg.substring(msg.length()-1, msg.length())).equals("}")) {
+      //Envío a  AWS:
+      if (millis() - lastPublish > 10000) {
+        String msg = rc.data;
+        if ((msg.substring(msg.length()-1, msg.length())).equals("}")) {
           String topic = String("device/") + nodo + String("/data");
           Serial.println(topic + ": " + msg);
           display.showString(nodo.c_str());
-          pubSubClient.publish(topic.c_str(), msg.c_str());
+          // one final check
+          if (pubSubClient.connected()) {
+            pubSubClient.publish(topic.c_str(), msg.c_str());
+          } else {
+            display.showString("NO WIFI!");
+          }
           Serial.println("Published.");
           display.showString("Published");
           lastPublish = millis();
+        }
       }
     }
   }//if e32 dispoinble
@@ -237,19 +243,26 @@ void msgReceived(char* topic, byte* payload, unsigned int length) {
   Serial.println();
 }
 
-void pubSubCheckConnect() {
+bool pubSubCheckConnect() {
   if ( ! pubSubClient.connected()) {
     display.showString("PUBSUB");
     Serial.print("PubSubClient connecting to: "); Serial.print(awsEndpoint);
+    int i = 0;
     while ( ! pubSubClient.connected()) {
       Serial.print(".");
       pubSubClient.connect("ESPthing");
+      i += 1;
+      if (i > 30) {
+        Serial.println("Failed after 30 attempts to connect");
+        return false;
+      }
     }
     Serial.println(" connected");
     pubSubClient.subscribe("inTopic");
     display.showString("DONE");
   }
   pubSubClient.loop();
+  return true;
 }
 
 int b64decode(String b64Text, uint8_t* output) {
