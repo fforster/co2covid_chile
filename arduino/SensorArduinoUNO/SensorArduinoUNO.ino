@@ -9,6 +9,7 @@ Pablo Martín y Francisco Forster
 #include <SoftwareSerial.h>
 #include <MHZ19_uart.h>
 #include <TM1637TinyDisplay.h>
+#include "DHT.h"
 #include "Sensor_config.h"
 
 // conexiones
@@ -26,7 +27,10 @@ Pablo Martín y Francisco Forster
 #define CLK 12   // define CLK pin (any digital pin)
 #define DIO 11   // define DIO pin (any digital pin)
 
-#define buzzerPin 7 // buzzer pin
+#define DHTPIN 10 // define DHT pin
+#define DHTTYPE DHT11   // DHT 11
+
+#define buzzerPin 13 // buzzer pin
 
 
 // LoRa E32TTL100
@@ -58,20 +62,27 @@ int ppmAlerta = 800; // Umbral de alerta
 // Display de 7 segmentos
 // -----------------------------------------------------------------
 TM1637TinyDisplay display(CLK, DIO);
-  
+
+// sensor temperatura y humedad
+DHT dht(DHTPIN, DHTTYPE);
+
 
 // Setup 
 // ******************************************************************
 void setup() {
+
   //Inicialización de comunicaciones seriales:
-  Serial.begin(9600);  //Para debuggear
-  co2Serial.begin(9600); //Comunicación sensor CO2 UART
-  e32ttl100.begin(); //Comunicación LoRa
+  Serial.begin(9600);  // para debuggear
+  co2Serial.begin(9600); // comunicación sensor CO2 UART
+  e32ttl100.begin(); // comunicación LoRa
+  dht.begin(); // sensor temperature y humedad
+  pinMode(buzzerPin, OUTPUT); // bocina
+  digitalWrite(buzzerPin, HIGH);  
   delay(1000);
 
   //Saludo en pantalla:
   display.setBrightness(BRIGHT_7);
-  display.showString("HOLA");
+  display.showString(StringId.c_str());
   
   //LoRa:
   display.showString("LORA");
@@ -135,13 +146,19 @@ void loop() {
   //ELSE DISPLAY
   co2Serial.listen();
   ppm = readCO2UART();
-  float humidity = 0;
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();  
+
   display.showNumber(int(ppm)); 
   if(ppm >= ppmAlerta){
-    Serial.print("Alerta");
-    tone(buzzerPin, 2100, 300); delay(100);
-    tone(buzzerPin, 2100, 300); delay(100);
-  }
+    Serial.println("Alerta");
+    for (int j=0; j < 2; j++) {
+      digitalWrite(buzzerPin ,LOW); //Setting pin to LOW
+      delay(100); //Delaying
+      digitalWrite(buzzerPin, HIGH); //Setting pin to high
+      delay(100); //Delaying
+    }
+  } 
   for (int i = 0; i < 60; i++) {
     Serial.println(i);
     mySerial.listen();
@@ -150,14 +167,23 @@ void loop() {
       Serial.println(rc.data);
       if (StringId.equals(rc.data)) {
         String msg = String("{\"co2\": ") + ppm
-            + String(", \"temperature\": ") + temp
+            + String(", \"temperature\": ") + temperature
             + String(", \"humidity\": ") + humidity + String("}");
         e32ttl100.sendMessage(msg.c_str());
         Serial.println(msg);
         break;
       }
     }
-    delay(1000);
+    if (ppm >= ppmAlerta) {
+      for (int j = 0; j < 2; j ++) {
+        display.showString("");
+        delay(200);
+        display.showNumber(int(ppm));
+        delay(300);
+      }
+    } else {
+      delay(1000);
+    }
   }
 }
 
