@@ -181,10 +181,10 @@ void consultarA(String nodo){
   Serial.println("Enviando mensaje a: " + nodo);
   ResponseStatus rs = e32ttl100.sendMessage(nodo);
   //If something available
-  delay(5000);
+  delay(10000);
   if(e32ttl100.available()  > 1 ){ 
     ResponseContainer rc = e32ttl100.receiveMessage();
-  
+    Serial.println("Respuesta recibida");
     //Conexión para envío a AWS:
     if (pubSubCheckConnect()) {
   
@@ -195,12 +195,7 @@ void consultarA(String nodo){
           String topic = String("device/") + nodo + String("/data");
           Serial.println(topic + ": " + msg);
           display.showString(nodo.c_str());
-          // one final check
-          if (pubSubClient.connected()) {
-            pubSubClient.publish(topic.c_str(), msg.c_str());
-          } else {
-            display.showString("NO WIFI!");
-          }
+          pubSubClient.publish(topic.c_str(), msg.c_str());
           Serial.println("Published.");
           display.showString("Published");
           lastPublish = millis();
