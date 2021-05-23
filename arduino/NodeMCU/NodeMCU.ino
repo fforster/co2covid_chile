@@ -184,15 +184,19 @@ void consultarA(String nodo){
   delay(10000);
   if(e32ttl100.available()  > 1 ){ 
     ResponseContainer rc = e32ttl100.receiveMessage();
-    Serial.println("Respuesta recibida");
+    String msg = rc.data;
+    Serial.println("Respuesta recibida: " + msg);
+    msg.replace(", \"T\":", ", \"temperature\":"); 
+    msg.replace(", \"H\":", ", \"humidity\":"); 
     //Conexión para envío a AWS:
     if (pubSubCheckConnect()) {
   
       //Envío a  AWS:
       if (millis() - lastPublish > 10000) {
-        String msg = rc.data;
-        if ((msg.substring(msg.length()-1, msg.length())).equals("}")) {
+        if (msg.substring(0, nodo.length()).equals(nodo) && ((msg.substring(msg.length()-1, msg.length())).equals("}"))) {
           String topic = String("device/") + nodo + String("/data");
+          Serial.println("Publishing...");
+          msg = msg.substring(nodo.length() + 2, msg.length());
           Serial.println(topic + ": " + msg);
           display.showString(nodo.c_str());
           pubSubClient.publish(topic.c_str(), msg.c_str());

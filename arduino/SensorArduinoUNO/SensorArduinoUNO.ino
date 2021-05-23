@@ -166,9 +166,10 @@ void loop() {
       ResponseContainer rc = e32ttl100.receiveMessage();
       Serial.println(rc.data);
       if (StringId.equals(rc.data)) {
-        String msg = String("{\"co2\": ") + ppm
-            + String(", \"temperature\": ") + temperature
-            + String(", \"humidity\": ") + humidity + String("}");
+        // this message cannot be very long, it will be reformatted by the gateway
+        String msg = StringId + String(": {\"co2\": ") + ppm
+            + String(", \"T\": ") + temperature
+            + String(", \"H\": ") + humidity + String("}");
         e32ttl100.sendMessage(msg.c_str());
         Serial.println(msg);
         break;
