@@ -11,6 +11,7 @@ Pablo Martín y Francisco Forster
 #include <TM1637TinyDisplay.h>
 #include "DHT.h"
 #include "Sensor_config.h"
+#include <MHZ19_uart.h>
 
 // conexiones
 // ------------------------------------------------
@@ -40,11 +41,10 @@ SoftwareSerial mySerial(E32TX, E32RX); // (no cambiar nombre mySerial
 LoRa_E32 e32ttl100(&mySerial, E32AUX, E32M0, E32M1);
 ResponseStatus rsb;
 
-
-// Sensor NDIR
-// -----------------------------------------------------------------
 SoftwareSerial co2Serial(MHZ19TX, MHZ19RX); //D8: TX del sensor , D9: RX del sensor (confirmar)
 MHZ19_uart mhz19;
+  
+
 //Tiempos de muestreo y calentamiento NDIR:
 int samplingTime_seg = 15; //en seg
 int tHeat = 10; //180; //en seg
@@ -71,9 +71,18 @@ DHT dht(DHTPIN, DHTTYPE);
 // ******************************************************************
 void setup() {
 
+
+
   //Inicialización de comunicaciones seriales:
   Serial.begin(9600);  // para debuggear
-  co2Serial.begin(9600); // comunicación sensor CO2 UART
+  if (mhz19lib) {
+    mhz19.begin(MHZ19TX, MHZ19RX);
+    if (autocalibration) {
+      mhz19.setAutoCalibration(false);
+    }
+  } else {
+    co2Serial.begin(9600); // comunicación sensor CO2 UART
+  }
   e32ttl100.begin(); // comunicación LoRa
   dht.begin(); // sensor temperature y humedad
   pinMode(buzzerPin, OUTPUT); // bocina
@@ -144,8 +153,13 @@ void loop() {
   //FOR I = 1,...,60
   //IF NEWS... DISPLAY(ALARM?), TRANSMIT AND BREAK
   //ELSE DISPLAY
-  co2Serial.listen();
-  ppm = readCO2UART();
+  if (mhz19lib) {
+    ppm = mhz19.getPPM(); //readCO2UART();  // add this line
+  } else {
+    co2Serial.listen();  // add this line
+    ppm = readCO2UART();  // add this line
+  }
+  Serial.println(ppm);
   float humidity = dht.readHumidity();
   float temperature = dht.readTemperature();  
 
