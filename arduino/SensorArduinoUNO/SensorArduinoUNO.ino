@@ -46,8 +46,6 @@ MHZ19_uart mhz19;
   
 
 //Tiempos de muestreo y calentamiento NDIR:
-int samplingTime_seg = 15; //en seg
-int tHeat = 10; //180; //en seg
 //Variables auxiliares NDIR:
 unsigned long ppm = 0;
 byte temp = 0;
@@ -56,7 +54,6 @@ byte temp = 0;
 // Buzzer (pasivo)
 //-----------------------------------------------------------------
 byte auxAlerta = 0;  // Si este valor es 1 por un tiempo x, sonará la alarma.
-int ppmAlerta = 800; // Umbral de alerta
 
 
 // Display de 7 segmentos
