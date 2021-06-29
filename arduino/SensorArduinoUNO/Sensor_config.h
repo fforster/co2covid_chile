@@ -3,6 +3,7 @@
 //Formato: Tres Mayúsculas y 2 números. Obs: .equals() es case sensitive
 String StringId = "p01-04"; 
 
+bool activebuzzer = true; // whether we are using an active or passive buzzer
 bool e32config = true; // configure e32
 bool autocalibration = true; // whether to auto calibrate
 bool mhz19lib = true; // whether to use external MHZ19 library

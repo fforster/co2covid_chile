@@ -63,6 +63,38 @@ TM1637TinyDisplay display(CLK, DIO);
 // sensor temperatura y humedad
 DHT dht(DHTPIN, DHTTYPE);
 
+// play tone
+void playTone(int tone, int duration) {
+  for (long i = 0; i < duration * 1000L; i += tone * 2) {
+    digitalWrite(buzzerPin, HIGH);
+    delayMicroseconds(tone);
+    digitalWrite(buzzerPin, LOW);
+    delayMicroseconds(tone);
+  }
+}
+
+// buzzer alert
+void buzzerwarning() {
+
+  if (activebuzzer) {
+    pinMode(buzzerPin, OUTPUT);
+    // 1 second music
+    for (int i = 0; i < 2; i++) {
+      playTone(1275, 50); // g note
+      delay(100); 
+    }
+    pinMode(buzzerPin, INPUT); // this stops the buzzer (to avoid annoying background noise)
+  } 
+  else { 
+      
+    for (int j=0; j < 2; j++) {
+      digitalWrite(buzzerPin ,LOW); //Setting pin to LOW
+      delay(100); //Delaying
+      digitalWrite(buzzerPin, HIGH); //Setting pin to high
+      delay(100); //Delaying
+    }
+  }
+}
 
 // Setup 
 // ******************************************************************
@@ -85,6 +117,8 @@ void setup() {
   pinMode(buzzerPin, OUTPUT); // bocina
   digitalWrite(buzzerPin, HIGH);  
   delay(1000);
+
+  buzzerwarning();
 
   //Saludo en pantalla:
   display.setBrightness(BRIGHT_7);
@@ -163,12 +197,7 @@ void loop() {
   display.showNumber(int(ppm)); 
   if(ppm >= ppmAlerta){
     Serial.println("Alerta");
-    for (int j=0; j < 2; j++) {
-      digitalWrite(buzzerPin ,LOW); //Setting pin to LOW
-      delay(100); //Delaying
-      digitalWrite(buzzerPin, HIGH); //Setting pin to high
-      delay(100); //Delaying
-    }
+    buzzerwarning();
   } 
   for (int i = 0; i < 60; i++) {
     Serial.println(i);
