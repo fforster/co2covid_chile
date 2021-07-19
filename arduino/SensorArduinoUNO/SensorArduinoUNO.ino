@@ -122,7 +122,7 @@ void setup() {
   display.setBrightness(BRIGHT_7);
   display.showString(StringId.c_str());
   if (autocalibration) {
-    display.showString("Using autocalibration");
+    display.showString("AUTOCAL");
   }
   
   //LoRa:
