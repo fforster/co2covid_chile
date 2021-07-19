@@ -106,9 +106,7 @@ void setup() {
   Serial.begin(9600);  // para debuggear
   if (mhz19lib) {
     mhz19.begin(MHZ19TX, MHZ19RX);
-    if (autocalibration) {
-      mhz19.setAutoCalibration(false);
-    }
+    mhz19.setAutoCalibration(autocalibration);
   } else {
     co2Serial.begin(9600); // comunicación sensor CO2 UART
   }
@@ -123,6 +121,9 @@ void setup() {
   //Saludo en pantalla:
   display.setBrightness(BRIGHT_7);
   display.showString(StringId.c_str());
+  if (autocalibration) {
+    display.showString("Using autocalibration");
+  }
   
   //LoRa:
   display.showString("LORA");
@@ -165,6 +166,7 @@ void setup() {
     Serial.println("ELIGIENDO MODO NORMAL DE TRANSMISIÓN...");
     e32ttl100.setMode(MODE_0_NORMAL);
     delay(1000);
+    Serial.println("DONE");
     display.showString("DONE");
     delay(1000);
   }
@@ -175,6 +177,20 @@ void setup() {
   Serial.println("CONFIGURACIÓN LISTA ARDUINO UNO...");
   display.showString("DONE"); 
   delay(1000);
+
+  if (zerocalibration and not autocalibration) {
+    Serial.println("Zero calibration, waiting 10 minutes...");
+    for (int i=0; i < 10; i++) {
+      display.showString("Zero calibration...");
+      delay(60000);
+    }
+    mhz19.calibrateZero();
+    Serial.println("1st zero calibration now .");
+    display.showString("Zero calibration...");
+    delay(60000);
+    mhz19.calibrateZero();  // Just in case
+    Serial.println("2nd zero calibration now .");
+  }
 }
 
 
