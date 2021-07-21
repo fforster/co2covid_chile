@@ -216,7 +216,7 @@ void loop() {
   float temperature = dht.readTemperature();  
 
   display.showNumber(int(ppm)); 
-  if(ppm >= ppmAlerta){
+  if(soundalarm and (ppm >= ppmAlerta)){
     Serial.println("Alerta");
     buzzerwarning();
   } 
@@ -236,7 +236,7 @@ void loop() {
         break;
       }
     }
-    if (ppm >= ppmAlerta) {
+    if (visualalarm and (ppm >= ppmAlerta)) {
       for (int j = 0; j < 2; j ++) {
         display.showString("");
         delay(200);
