@@ -158,7 +158,7 @@ void setup() {
 //-----------------------------------------------------------------
 void loop() {
   
-  for (int i = 1; i <= numeroSensores; i++) {
+  for (int i = primersensor; i <= numeroSensores + (primersensor - 1); i++) {
     Serial.println(i);
     display.showNumber(i);
     String nodoIdAux = idRoot; 

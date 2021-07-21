@@ -1,8 +1,10 @@
 //Datos del cliente:
 //-----------------------------------------------------------------
-String idRoot = "CPV";  //Formato: idRoot(3 letras mayúsculas) + número de sensor (00 a 99)
-byte numeroSensores = 4; //Debe ser entre 0 y 99
+String idRoot = "ffb";  //Formato: idRoot(3 letras mayúsculas) + número de sensor (00 a 99)
+byte numeroSensores = 2; // total asociados a este gateway 
+byte primersensor = 1; // el primer sensor asociado a este gateway
 
 // wifi configutation
-const char* ssid = "Escribir nombre de la red acá";
-const char* password = "Escribir clave de la red acá";
+
+const char* ssid = "";
+const char* password = "";
