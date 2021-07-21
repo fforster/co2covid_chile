@@ -71,7 +71,8 @@ void setup() {
   
   //Saludo en pantalla:
   display.setBrightness(BRIGHT_7);
-  display.showString("HOLA");
+  display.showString(idRoot.c_str());
+  delay(1000);
 
   //Wifi
   display.showString("WIFI");

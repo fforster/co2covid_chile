@@ -123,6 +123,11 @@ void setup() {
   display.showString(StringId.c_str());
   if (autocalibration) {
     display.showString("AUTOCAL");
+    delay(1000);
+  }
+  if (zerocalibration) {
+    display.showString("ZEROCAL");
+    delay(1000);
   }
   
   //LoRa:
